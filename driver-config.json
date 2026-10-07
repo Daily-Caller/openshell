@@ -1,0 +1,18 @@
+{
+  "docker": {
+    "mounts": [
+      {
+        "type": "volume",
+        "source": "openshell-work",
+        "target": "/sandbox/work",
+        "read_only": false
+      },
+      {
+        "type": "tmpfs",
+        "target": "/sandbox/tmp-scratch",
+        "size_bytes": 67108864,
+        "mode": 448
+      }
+    ]
+  }
+}
