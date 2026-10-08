@@ -63,6 +63,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
         nodejs=22.22.1-1nodesource1 \
         vim-tiny \
         nano \
+        tmux \
     && rm -rf /var/lib/apt/lists/* \
     && npm install -g npm@11.11.0
 
