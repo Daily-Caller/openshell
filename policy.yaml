@@ -194,3 +194,11 @@ network_policies:
       - { path: /usr/bin/codex }
       - { path: /usr/bin/node }
       - { path: "/usr/lib/node_modules/@openai/**" }
+
+  spacexai:
+    name: spacexai
+    endpoints:
+      - { host: api.x.ai, port: 443 }
+    binaries:
+      - { path: /usr/local/bin/spacexai }
+      - { path: /usr/bin/node }
