@@ -81,6 +81,7 @@ network_policies:
       - { path: /usr/bin/curl }
       - { path: /bin/bash }
       - { path: /usr/local/bin/opencode }
+      - { path: /usr/local/bin/opencode2 }
 
   # --- GitHub REST API (read-only) ---
   github_rest_api:
@@ -180,10 +181,13 @@ network_policies:
       port: 443
     - host: integrate.api.nvidia.com
       port: 443
+    - host: api.x.ai
+      port: 443
     binaries:
-    - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
+    - path: /usr/lib/node_modules/@opencode/cli/bin/opencode.exe
     - path: /usr/bin/node
     - path: /usr/local/bin/opencode
+    - path: /usr/local/bin/opencode2
 
   codex:
     name: codex

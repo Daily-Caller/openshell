@@ -71,11 +71,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 #   (GHSA-qffp-2rhf-9h96, GHSA-9ppj-qmqm-q256, GHSA-8qq5-rm4j-mr97,
 #    GHSA-r6q2-hw4h-h46w, GHSA-34x7-hfp2-rc4v, GHSA-83g3-92jg-28cx,
 #    GHSA-wc8c-qw6v-h7f6).
-# opencode-ai + @openai/codex: agent CLIs.
+# @opencode/cli + @openai/codex: agent CLIs.
 RUN npm install -g \
         tar@7.5.11 \
         @hono/node-server@1.19.11 \
-        opencode-ai@1.2.18 \
+        @opencode/cli@2.0.25 \
         @openai/codex@0.117.0 \
         @github/copilot@1.0.16
 
