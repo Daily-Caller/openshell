@@ -39,7 +39,7 @@ network_policies:
   claude_code:
     name: claude-code
     endpoints:
-      - { host: api.anthropic.com, port: 443, protocol: rest, enforcement: enforce, access: full, tls: terminate }
+      - { host: api.anthropic.com, port: 443, protocol: rest, enforcement: enforce, access: full }
       - { host: statsig.anthropic.com, port: 443 }
       - { host: sentry.io, port: 443 }
       - { host: raw.githubusercontent.com, port: 443 }
@@ -54,7 +54,6 @@ network_policies:
       - host: github.com
         port: 443
         protocol: rest
-        tls: terminate
         enforcement: enforce
         rules:
           # Git Smart HTTP read-only: allow clone, fetch, pull
@@ -90,7 +89,6 @@ network_policies:
       - host: api.github.com
         port: 443
         protocol: rest
-        tls: terminate
         enforcement: enforce
         access: read-only
     binaries:
