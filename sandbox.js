@@ -1,5 +1,19 @@
 #!/usr/bin/env -S deno run --allow-read --allow-run
 
+async function hasOpenshell() {
+	try {
+		const cmd = new Deno.Command("which", {
+			args: ["openshell"],
+			stdout: "null",
+			stderr: "null",
+		});
+		const { code } = await cmd.output();
+		return code === 0;
+	} catch {
+		return false;
+	}
+}
+
 if (Deno.args.length !== 2) {
 	console.error("Usage: sandbox.js <name> <path>");
 	Deno.exit(1);
@@ -7,6 +21,11 @@ if (Deno.args.length !== 2) {
 
 const name = Deno.args[0];
 const pathArg = Deno.args[1];
+
+if (!(await hasOpenshell())) {
+	console.error("openshell not found in PATH. Please install openshell and ensure it is in your PATH.");
+	Deno.exit(1);
+}
 
 export async function createSandbox(path, name) {
 	let config;
@@ -72,11 +91,11 @@ export async function sandboxExists(name) {
 	let sandboxes;
 	try {
 		sandboxes = JSON.parse(listText);
-	} catch (e) {
-		throw new Error(e instanceof Error ? e.message : String(e));
+	} catch {
+		return false;
 	}
 	if (!Array.isArray(sandboxes)) {
-		throw new Error("openshell sandbox list did not return a JSON array");
+		return false;
 	}
 	return sandboxes.some((s) => s.name === name || s.id === name);
 }
