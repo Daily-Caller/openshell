@@ -54,6 +54,15 @@ export async function createSandbox(path, name) {
 
 	const jsonString = JSON.stringify(config);
 
+	const image = `openshell-sandbox-${name}`;
+	const build = await new Deno.Command("docker", {
+		args: ["build", "-t", image, "."],
+		stdin: "inherit",
+		stdout: "inherit",
+		stderr: "inherit",
+	}).output();
+	if (build.code !== 0) Deno.exit(build.code);
+
 	const cmd = new Deno.Command("openshell", {
 		args: [
 			"sandbox",
@@ -61,7 +70,7 @@ export async function createSandbox(path, name) {
 			"--name",
 			name,
 			"--from",
-			".",
+			image,
 			"--policy",
 			"policy.yaml",
 			"--driver-config-json",
