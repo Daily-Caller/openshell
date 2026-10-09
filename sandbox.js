@@ -52,6 +52,40 @@ export async function createSandbox(path, name) {
 	return code;
 }
 
+export async function sandboxExists(name) {
+	const listCmd = new Deno.Command("openshell", {
+		args: ["sandbox", "list", "-o", "json"],
+		stdout: "piped",
+		stderr: "piped",
+	});
+	const listOutput = await listCmd.output();
+	if (listOutput.code !== 0) {
+		const errText = new TextDecoder().decode(listOutput.stderr).trim();
+		throw new Error(errText || `openshell sandbox list failed with code ${listOutput.code}`);
+	}
+	const listText = new TextDecoder().decode(listOutput.stdout);
+	let sandboxes;
+	try {
+		sandboxes = JSON.parse(listText);
+	} catch (e) {
+		throw new Error(e instanceof Error ? e.message : String(e));
+	}
+	if (!Array.isArray(sandboxes)) {
+		throw new Error("openshell sandbox list did not return a JSON array");
+	}
+	return sandboxes.some((s) => s.name === name || s.id === name);
+}
+
+try {
+	if (await sandboxExists(name)) {
+		console.error(`Sandbox "${name}" already exists`);
+		Deno.exit(1);
+	}
+} catch (e) {
+	console.error(e instanceof Error ? e.message : String(e));
+	Deno.exit(1);
+}
+
 try {
 	Deno.exit(await createSandbox(pathArg, name));
 } catch (e) {
