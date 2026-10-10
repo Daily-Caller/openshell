@@ -1,5 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read --allow-run
 
+import { dirname, fromFileUrl, join } from "jsr:@std/path";
+
 async function hasOpenshell() {
 	try {
 		const cmd = new Deno.Command("which", {
@@ -52,6 +54,13 @@ export async function createSandbox(path, name) {
 		source: `${path}/.git`,
 		target: `/sandbox/${name}/.git`,
 		read_only: true,
+	});
+
+	config.docker.mounts.push({
+		type: "bind",
+		source: join(dirname(fromFileUrl(import.meta.url)), "opencode"),
+		target: "/sandbox/.config/opencode/",
+		read_only: false,
 	});
 
 
