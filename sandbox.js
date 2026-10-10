@@ -47,6 +47,14 @@ export async function createSandbox(path, name) {
 		read_only: false,
 	});
 
+	config.docker.mounts.push({
+		type: "bind",
+		source: `${path}/.git`,
+		target: `/sandbox/${name}/.git`,
+		read_only: true,
+	});
+
+
 	const jsonString = JSON.stringify(config);
 
 	const image = `openshell-sandbox-${name}`;
@@ -66,6 +74,8 @@ export async function createSandbox(path, name) {
 			name,
 			"--from",
 			image,
+			"--expose",
+			"9998",
 			"--policy",
 			"policy.yaml",
 			"--driver-config-json",
@@ -104,29 +114,6 @@ export async function sandboxExists(name) {
 	return sandboxes.some((s) => s.name === name || s.id === name);
 }
 
-export async function startOpencodeInSandbox(name) {
-	const cmd = new Deno.Command("openshell", {
-		args: [
-			"sandbox",
-			"exec",
-			name,
-			"--workdir",
-			`/sandbox/${name}`,
-			"opencode",
-			"--port",
-			"5000",
-		],
-		stdin: "inherit",
-		stdout: "inherit",
-		stderr: "inherit",
-	});
-	const { code } = await cmd.output();
-	if (code !== 0) {
-		throw new Error(`opencode start failed with code ${code}`);
-	}
-	return code;
-}
-
 try {
 	if (await sandboxExists(name)) {
 		console.error(`Sandbox "${name}" already exists`);
@@ -139,10 +126,7 @@ try {
 
 try {
 	const code = await createSandbox(pathArg, name);
-	if (code !== 0) {
-		Deno.exit(code);
-	}
-	Deno.exit(await startOpencodeInSandbox(name));
+	Deno.exit(code);
 } catch (e) {
 	console.error(e instanceof Error ? e.message : String(e));
 	Deno.exit(1);
