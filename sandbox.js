@@ -47,11 +47,6 @@ export async function createSandbox(path, name) {
 		read_only: false,
 	});
 
-	if (!Array.isArray(config.docker.ports)) {
-		config.docker.ports = [];
-	}
-	config.docker.ports.push({ host: 5000, container: 5000 });
-
 	const jsonString = JSON.stringify(config);
 
 	const image = `openshell-sandbox-${name}`;
