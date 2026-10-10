@@ -15,7 +15,6 @@ filesystem_policy:
     - /app
     - /etc
     - /var/log
-    - /sandbox/**/.git/**
   read_write:
     - /sandbox
     - /tmp
