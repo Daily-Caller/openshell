@@ -1,68 +1,32 @@
-# Base Sandbox
+# Openshell
 
-The foundational sandbox image that all other OpenShell Community sandbox images build from.
+This is a standard environment for working on our projects using Opencode inside an Openshell sandbox.
 
-## What's Included
+The bot is able to work freely within the sandbox constraints, but cannot write to the outside world.  Git commits must be reviewed and published by the user.
 
-| Category | Tools |
-|----------|-------|
-| OS | Ubuntu 24.04 |
-| Languages | `python3` (3.14.3), `node` (22.22.1) |
-| Package managers | `npm` (11.11.0), `uv` (0.10.8), `pip` |
-| Coding agents | `claude`, `opencode`, `codex`, `copilot` |
-| Developer | `gh`, `git`, `vim`, `nano` |
-| Networking | `ping`, `dig`, `nslookup`, `nc`, `traceroute`, `netstat`, `curl` |
+## Configuration
 
-### Users
+Copy `user-env.sample` to `user-env`, and edit it. You primarily need to put in your API key(s) and set models accordingly.
 
-| User | Purpose |
-|------|---------|
-| `supervisor` | Privileged process management (nologin shell) |
-| `sandbox` | Unprivileged user for agent workloads (default) |
+You can then go into opencode/ directory, add a cli.json and, if you want, a theme/ directory with custom themes.
 
-### Directory Layout
+## Startup
+
+### Command Line
 
 ```
-/sandbox/                  # Home directory (sandbox user)
-  .bashrc, .profile        # Shell init (PATH, VIRTUAL_ENV, UV_PYTHON_INSTALL_DIR)
-  .venv/                   # Writable Python venv (pip install, uv pip install)
-  .agents/skills/          # Agent skill discovery
-  .claude/skills/          # Claude skill discovery (symlinked from .agents/skills)
+deno run -A sandbox.js <project name> <host path to project>
 ```
 
-### Skills
+### Example
 
-The base image ships with the following agent skills:
-
-| Skill | Description |
-|-------|-------------|
-| `github` | REST-only GitHub CLI usage guide (GraphQL is blocked in sandboxes) |
-
-## Build
-
-```bash
-docker build -t openshell-base .
+```
+deno run -A sandbox.js dc-rambo /home/user/development/dc/rambo
 ```
 
-## Building a Sandbox on Top
+## Operation
 
-Other sandbox images should use this as their base:
-
-```dockerfile
-ARG BASE_IMAGE=ghcr.io/nvidia/openshell-community/sandboxes/base:latest
-FROM ${BASE_IMAGE}
-
-# Add your sandbox-specific layers here
 ```
-
-See the other directories under `sandboxes/` for examples.
-
-## Codex authentication
-
-For remote or headless OpenShell environments, if browser login hangs, try authenticating Codex with:
-
-```bash
-codex login --device-auth
+cd <project name>
+opencode
 ```
-
-If device-code login is unreliable in your environment, you can authenticate on another machine and copy ~/.codex/auth.json into the sandbox.
