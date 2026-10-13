@@ -121,13 +121,9 @@ network_policies:
   pypi:
     name: pypi
     endpoints:
-      - { host: pypi.org, port: 443 }
-      - { host: files.pythonhosted.org, port: 443 }
-      # uv python install downloads from python-build-standalone on GitHub
-      - { host: github.com, port: 443 }
-      - { host: objects.githubusercontent.com, port: 443 }
-      # uv resolves python-build-standalone release metadata via the GitHub API
-      - { host: api.github.com, port: 443 }
+      - { host: pypi.org, port: 443, protocol: rest, enforcement: enforce, access: full, allow_encoded_slash: true }
+      - { host: files.pythonhosted.org, port: 443, protocol: rest, enforcement: enforce, access: full, allow_encoded_slash: true }
+      - { host: objects.githubusercontent.com, port: 443, protocol: rest, enforcement: enforce, access: full, allow_encoded_slash: true }
       - { host: downloads.python.org, port: 443 }
     binaries:
       - { path: /sandbox/.venv/bin/python }
@@ -172,26 +168,23 @@ network_policies:
   opencode:
     name: opencode
     endpoints:
-    - host: registry.npmjs.org
-      port: 443
-    - host: opencode.ai
-      port: 443
-    - host: integrate.api.nvidia.com
-      port: 443
-    - host: api.x.ai
-      port: 443
+      - { host: registry.npmjs.org, port: 443, protocol: rest, enforcement: enforce, access: full, allow_encoded_slash: true }
+      - { host: opencode.ai, port: 443 }
+      - { host: integrate.api.nvidia.com, port: 443 }
+      - { host: api.x.ai, port: 443 }
     binaries:
-    - path: /usr/lib/node_modules/@opencode/cli/bin/opencode.exe
-    - path: /usr/bin/node
-    - path: /usr/local/bin/opencode
-    - path: /usr/local/bin/opencode2
+      - { path: /usr/lib/node_modules/@opencode/cli/bin/opencode.exe }
+      - { path: /usr/bin/node }
+      - { path: /usr/local/bin/opencode }
+      - { path: /usr/local/bin/opencode2 }
+      - { path: /usr/bin/npm }
 
   codex:
     name: codex
     endpoints:
-      - { host: api.openai.com,  port: 443 }
-      - { host: auth.openai.com, port: 443 }
-      - { host: chatgpt.com,     port: 443 }
+      - { host: api.openai.com,  port: 443, protocol: rest, enforcement: enforce, access: full }
+      - { host: auth.openai.com, port: 443, protocol: rest, enforcement: enforce, access: full }
+      - { host: chatgpt.com,     port: 443, protocol: rest, enforcement: enforce, access: full }
     binaries:
       - { path: /usr/bin/codex }
       - { path: /usr/bin/node }
