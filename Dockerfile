@@ -76,7 +76,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 RUN npm install -g \
         tar@7.5.11 \
         @hono/node-server@1.19.11 \
-        @opencode/cli@2.0.25 \
+        @opencode/cli@2 \
         @openai/codex@0.117.0 \
         @github/copilot@1.0.16
 
