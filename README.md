@@ -6,7 +6,7 @@ The bot is able to work freely within the sandbox constraints, but cannot write 
 
 ## Configuration
 
-Copy `user-env.sample` to `user-env`, and edit it. You primarily need to put in your API key(s) and set models accordingly.
+Copy `user-env.sample` to `user-env` and put in your API key(s) and set models accordingly. If `user-env` is present, it is automatically loaded and its KEY=VALUE pairs are passed to the sandbox (no manual sourcing required).
 
 You can then go into opencode/ directory, add a cli.json and, if you want, a theme/ directory with custom themes.
 

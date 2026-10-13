@@ -75,21 +75,40 @@ export async function createSandbox(path, name) {
 	}).output();
 	if (build.code !== 0) Deno.exit(build.code);
 
+	const args = [
+		"sandbox",
+		"create",
+		"--name",
+		name,
+		"--from",
+		image,
+		"--expose",
+		"9998",
+		"--policy",
+		"policy.yaml",
+		"--driver-config-json",
+		jsonString,
+	];
+
+	const userEnvPath = join(dirname(fromFileUrl(import.meta.url)), "user-env");
+	try {
+		const userEnvText = await Deno.readTextFile(userEnvPath);
+		for (const line of userEnvText.split("\n")) {
+			const trimmed = line.trim();
+			if (!trimmed || trimmed.startsWith("#")) continue;
+			const eq = trimmed.indexOf("=");
+			if (eq === -1) continue;
+			const key = trimmed.slice(0, eq).trim();
+			const value = trimmed.slice(eq + 1).trim();
+			if (!key) continue;
+			args.push("--env", `${key}=${value}`);
+		}
+	} catch {
+		// user-env is optional
+	}
+
 	const cmd = new Deno.Command("openshell", {
-		args: [
-			"sandbox",
-			"create",
-			"--name",
-			name,
-			"--from",
-			image,
-			"--expose",
-			"9998",
-			"--policy",
-			"policy.yaml",
-			"--driver-config-json",
-			jsonString,
-		],
+		args,
 		stdin: "inherit",
 		stdout: "inherit",
 		stderr: "inherit",
