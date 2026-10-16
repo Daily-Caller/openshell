@@ -122,7 +122,7 @@ COPY policy.yaml /etc/openshell/policy.yaml
 COPY skills/ /sandbox/.agents/skills/
 
 # Set up sandbox user home directory
-RUN mkdir -p /sandbox/.claude/skills && \
+RUN mkdir -p /sandbox/.config /sandbox/.claude/skills && \
     # Create a writable venv using uv-managed Python 3.14.3.
     # Sandbox users can `uv pip install` (or `pip install`) into
     # this venv without touching the base image layer.
@@ -143,7 +143,7 @@ RUN mkdir -p /sandbox/.claude/skills && \
         [ -d "$skill" ] || continue; \
         ln -sf "$skill" "/sandbox/.claude/skills/$(basename "$skill")"; \
     done && \
-    chown -R sandbox:sandbox /sandbox/.claude /sandbox/.agents /sandbox
+    chown -R sandbox:sandbox /sandbox/.config /sandbox/.claude /sandbox/.agents /sandbox
 
 USER sandbox
 
