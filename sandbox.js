@@ -56,13 +56,33 @@ export async function createSandbox(path, name) {
 		read_only: true,
 	});
 
-	config.docker.mounts.push({
-		type: "bind",
-		source: join(dirname(fromFileUrl(import.meta.url)), "opencode"),
-		target: "/sandbox/.config/opencode/",
-		read_only: false,
-	});
-
+	// OpenCode config: do NOT bind-mount the whole host opencode/ directory over
+	// /sandbox/.config/opencode/. That path is created in the image as a
+	// sandbox-owned writable directory so the runtime can write service.json,
+	// cli.json, and themes/ inside the container. A whole-dir bind would hide
+	// that writable layer and either force host ownership of those files or
+	// make them read-only with the rest of the tree.
+	//
+	// Instead, bind only the committed static config (read-only) so agents/,
+	// plugins/, opencode.json, and .gitignore are available in the sandbox
+	// without mounting mutable host-only state (service.json, cli.json, themes/).
+	const opencodeHost = join(dirname(fromFileUrl(import.meta.url)), "opencode");
+	const opencodeTarget = "/sandbox/.config/opencode";
+	const opencodeStatic = [
+		"agents",
+		"plugins",
+		"opencode.json",
+		".gitignore",
+		".git", // submodule gitdir pointer, if present
+	];
+	for (const item of opencodeStatic) {
+		config.docker.mounts.push({
+			type: "bind",
+			source: join(opencodeHost, item),
+			target: `${opencodeTarget}/${item}`,
+			read_only: true,
+		});
+	}
 
 	const jsonString = JSON.stringify(config);
 
