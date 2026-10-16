@@ -1,0 +1,12 @@
+{
+  "docker": {
+    "mounts": [
+      {
+        "type": "tmpfs",
+        "target": "/sandbox/tmp-scratch",
+        "size_bytes": 67108864,
+        "mode": 448
+      }
+    ]
+  }
+}

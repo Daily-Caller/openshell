@@ -1,0 +1,57 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"shell": "bash",
+
+	"providers": {
+		"anthropic": {
+			"settings": {
+				"apiKey": "{env:KEY_ANTHROPIC}"
+			}
+		},
+		"xai": {
+			"settings": {
+				"apiKey": "{env:KEY_XAI}"
+			}
+		},
+		"google": {
+			"settings": {
+				"apiKey": "{env:KEY_GOOGLE}"
+			}
+		},
+		"copilot": {
+			"settings": {
+				"apiKey": "{env:KEY_COPILOT}"
+			}
+		},
+		"codex": {
+			"settings": {
+				"apiKey": "{env:KEY_CODEX}"
+			}
+		}
+	},
+
+	"agents": {
+		"manager": {
+			"model": "{env:MODEL_MANAGER}"
+		},
+		"code": {
+			"model": "{env:MODEL_CODE}"
+		},
+		"plan": {
+			"model": "{env:MODEL_PLAN}"
+		},
+		"explore": {
+			"model": "{env:MODEL_EXPLORE}"
+		}
+	},
+
+	"model": "{env:MODEL_DEFAULT}",
+	"small_model": "{env:MODEL_SMALL}",
+
+	"default_agent": "{env:AGENT_DEFAULT}",
+
+	"plugin": [
+		"opencode-todolist@0.4.0"
+	],
+	"permissions": [ { "action": "*", "resource": "*", "effect": "allow" } ]
+}

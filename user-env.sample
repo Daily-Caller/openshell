@@ -1,0 +1,14 @@
+KEY_ANTHROPIC=
+KEY_XAI=
+KEY_GOOGLE=
+KEY_COPILOT=
+KEY_CODEX=
+
+AGENT_DEFAULT=manager
+
+MODEL_DEFAULT=xai/grok-4.3
+MODEL_SMALL=xai/grok-build-0.1
+MODEL_EXPLORE=xai/grok-build-0.1
+MODEL_PLAN=xai/grok-4.5
+MODEL_CODE=xai/grok-4.5
+MODEL_MANAGER==xai/grok-4.3
