@@ -71,6 +71,9 @@ export async function createSandbox(path, name) {
 	const opencodeStatic = [
 		"agents",
 		"plugins",
+		"themes",
+		"skills",
+		"prompts",
 		"opencode.json",
 		".gitignore",
 		".git", // submodule gitdir pointer, if present
