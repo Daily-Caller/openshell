@@ -63,9 +63,11 @@ export async function createSandbox(path, name) {
 	// that writable layer and either force host ownership of those files or
 	// make them read-only with the rest of the tree.
 	//
-	// Instead, bind only the committed static config (read-only) so agents/,
-	// plugins/, opencode.json, and .gitignore are available in the sandbox
-	// without mounting mutable host-only state (service.json, cli.json, themes/).
+	// Instead, bind each listed static item read-only only if the host path
+	// exists (agents/, plugins/, themes/, skills/, prompts/, opencode.json,
+	// .gitignore, .git). Missing ones (e.g. skills, prompts, optional .git)
+	// are skipped. Host-only mutable state (service.json, cli.json) is never
+	// mounted so the image's writable layer stays usable.
 	const opencodeHost = join(dirname(fromFileUrl(import.meta.url)), "opencode");
 	const opencodeTarget = "/sandbox/.config/opencode";
 	const opencodeStatic = [
@@ -79,9 +81,17 @@ export async function createSandbox(path, name) {
 		".git", // submodule gitdir pointer, if present
 	];
 	for (const item of opencodeStatic) {
+		const source = join(opencodeHost, item);
+		// Skip optional paths that are absent on the host (skills, prompts, .git).
+		try {
+			await Deno.stat(source);
+		} catch (e) {
+			if (e instanceof Deno.errors.NotFound) continue;
+			throw e;
+		}
 		config.docker.mounts.push({
 			type: "bind",
-			source: join(opencodeHost, item),
+			source,
 			target: `${opencodeTarget}/${item}`,
 			read_only: true,
 		});
