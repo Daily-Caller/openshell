@@ -1,7 +1,6 @@
 ---
 description: Breaks goals into ordered concrete TODO list of steps. Must never tell the Manager to STOP. Must only tell the Manager how to proceed.
 mode: subagent
-model: xai/grok-4.5
 permissions:
   - action: read
     resource: "*"

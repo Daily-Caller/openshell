@@ -1,7 +1,6 @@
 ---
 description: Intelligently edits code according to explicit instructions with native edit support. Never performs independent analysis or debugging.
 mode: subagent
-model: xai/grok-4.5
 permissions:
   - action: read
     resource: "*"

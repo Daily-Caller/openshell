@@ -197,3 +197,29 @@ network_policies:
     binaries:
       - { path: /usr/local/bin/spacexai }
       - { path: /usr/bin/node }
+
+  # --- Agent public internet ---
+  # Intent: give primary agent binaries broad access to the *public* internet
+  # (any public hostname on ports 80/443) so they can reach APIs, registries,
+  # docs, and other external services without a per-host allow-list.
+  #
+  # Public internet: YES — wildcard host on 80/443 with allow rule.
+  # Host machine / LAN: NO — deny rules block private ranges (10/8, 172.16/12,
+  # 192.168/16), loopback (localhost, 127.0.0.0/8, ::1), link-local (fe80::/10,
+  # 169.254.0.0/16), and unique-local IPv6 (fc00::/7).
+  agent_public_internet:
+    name: agent-public-internet
+    endpoints:
+      - { host: "**.*.*", port: 443 }
+      - { host: "**.*.*", port: 80 }
+    binaries:
+      - { path: /usr/local/bin/opencode }
+      - { path: /usr/local/bin/opencode2 }
+      - { path: /usr/lib/node_modules/@opencode/cli/bin/opencode.exe }
+      - { path: /usr/local/bin/claude }
+      - { path: /usr/bin/codex }
+      - { path: /usr/bin/node }
+      - { path: /usr/bin/npm }
+      - { path: "/usr/lib/node_modules/@openai/**" }
+      - { path: /usr/local/bin/spacexai }
+      - { path: /usr/bin/copilot }

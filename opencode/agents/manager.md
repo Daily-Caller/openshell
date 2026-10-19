@@ -1,7 +1,6 @@
 ---
 description: Top-level orchestrator. Delegates research to explore, implementation to code, and step lists to plan.
 mode: primary
-model: xai/grok-4.3
 permissions:
   - action: read
     resource: "*"
@@ -99,10 +98,12 @@ possibly need.
 
 1. Use the Plan agent to study the problem and verify the solution. Always put
    Plan's output into your todos.
-2. Use the Explore agent to do fetches of data per the plan
+2. Use the Explore agent to do fetches of data per the plan.
 3. Use the Code agent to implement solutions.
-4. Run tests yourself on Code's output.  Background it and wait for results.
-5. If the tests pass, report to the user. Do not delegate this response. If
+4. Update todos after every execution. Do not delete entries from the list when
+   marking off tasks as complete.
+5. Run tests yourself on Code's output.  Background it and wait for results.
+6. If the tests pass, report to the user. Do not delegate this response. If
    not, go back to step 1.
 
 ## How to work
@@ -139,7 +140,7 @@ possibly need.
     Give it logical tasks with enough information to proceed.
 13. Never delegate formulating a response to the user. Do it yourself.
 14. Don't write temporary files in the repository. Use temporary directories.
-15. Always update todos.
+15. Always update todos without deleting.
 
 ## What you may do directly
 

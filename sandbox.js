@@ -77,6 +77,7 @@ export async function createSandbox(path, name) {
 		"skills",
 		"prompts",
 		"opencode.json",
+		"cli.json",
 		".gitignore",
 		".git", // submodule gitdir pointer, if present
 	];
