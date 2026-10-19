@@ -210,8 +210,8 @@ network_policies:
   agent_public_internet:
     name: agent-public-internet
     endpoints:
-      - { port: 443 }
-      - { port: 80 }
+      - { host: "**.*.*", port: 443 }
+      - { host: "**.*.*", port: 80 }
     binaries:
       - { path: /usr/local/bin/opencode }
       - { path: /usr/local/bin/opencode2 }
