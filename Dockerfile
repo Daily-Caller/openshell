@@ -102,6 +102,72 @@ RUN uv python install 3.14.3 && \
     ln -s $(uv python find 3.14.3) /usr/local/bin/python && \
     uv cache clean
 
+# Multi-language toolchains — pinned for reproducibility.
+# Official tarballs/installers only; clean caches and temp files after each install.
+# Binaries are linked into /usr/local/bin so the final-stage PATH picks them up
+# without modifying existing ENV lines.
+#
+# Go 1.24.0: stable release from go.dev. Official linux tarball under
+# /usr/local/go. No known critical CVEs at pin time.
+#
+# Dart 3.7.0: stable SDK from dart.dev storage (Google Cloud dart-archive).
+# Provides the standalone dart toolchain alongside Flutter's bundled SDK.
+#
+# Flutter 3.29.0: stable-channel linux tarball from flutter_infra_release.
+# Official archive name is arch-agnostic (x64); arm64 hosts reuse the same pin
+# when a matching artifact is published upstream.
+#
+# Deno 2.2.0: official static binary from GitHub releases (denoland/deno).
+# Equivalent to the deno.land install script, without piping to a remote shell.
+#
+# Rust 1.85.0: pinned default toolchain via rustup for reproducible builds.
+# Installed under /usr/local/{rustup,cargo}; cargo registry/git caches stripped.
+ENV DART_SDK="/usr/lib/dart" \
+    FLUTTER_HOME="/usr/local/flutter" \
+    CARGO_HOME="/usr/local/cargo" \
+    RUSTUP_HOME="/usr/local/rustup"
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+        amd64) go_arch=amd64; dart_arch=x64; deno_arch=x86_64 ;; \
+        arm64) go_arch=arm64; dart_arch=arm64; deno_arch=aarch64 ;; \
+        *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac; \
+    # unzip needed for Dart and Deno zip archives
+    apt-get update && apt-get install -y --no-install-recommends unzip && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Go 1.24.0
+    curl -fsSL "https://go.dev/dl/go1.24.0.linux-${go_arch}.tar.gz" -o /tmp/go.tar.gz && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    ln -sf /usr/local/go/bin/go /usr/local/bin/go && \
+    ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt && \
+    rm -f /tmp/go.tar.gz && \
+    # Dart 3.7.0
+    curl -fsSL "https://storage.googleapis.com/dart-archive/channels/stable/release/3.7.0/sdk/dartsdk-linux-${dart_arch}-release.zip" -o /tmp/dart.zip && \
+    unzip -q /tmp/dart.zip -d /usr/lib && \
+    mv /usr/lib/dart-sdk /usr/lib/dart && \
+    ln -sf /usr/lib/dart/bin/dart /usr/local/bin/dart && \
+    rm -f /tmp/dart.zip && \
+    # Flutter 3.29.0 (stable)
+    curl -fsSL "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.29.0-stable.tar.xz" -o /tmp/flutter.tar.xz && \
+    tar -C /usr/local -xJf /tmp/flutter.tar.xz && \
+    ln -sf /usr/local/flutter/bin/flutter /usr/local/bin/flutter && \
+    ln -sf /usr/local/flutter/bin/dart /usr/local/bin/flutter-dart && \
+    rm -f /tmp/flutter.tar.xz && \
+    # Deno 2.2.0
+    curl -fsSL "https://github.com/denoland/deno/releases/download/v2.2.0/deno-${deno_arch}-unknown-linux-gnu.zip" -o /tmp/deno.zip && \
+    unzip -q /tmp/deno.zip -d /usr/local/bin && \
+    chmod 755 /usr/local/bin/deno && \
+    rm -f /tmp/deno.zip && \
+    # Rust 1.85.0 via rustup
+    curl -fsSL https://sh.rustup.rs -o /tmp/rustup-init.sh && \
+    sh /tmp/rustup-init.sh -y --default-toolchain 1.85.0 --profile minimal --no-modify-path && \
+    ln -sf /usr/local/cargo/bin/cargo /usr/local/bin/cargo && \
+    ln -sf /usr/local/cargo/bin/rustc /usr/local/bin/rustc && \
+    ln -sf /usr/local/cargo/bin/rustup /usr/local/bin/rustup && \
+    rm -f /tmp/rustup-init.sh && \
+    rm -rf /usr/local/cargo/registry /usr/local/cargo/git /tmp/*
+
 # Final base image
 FROM devtools AS final
 
