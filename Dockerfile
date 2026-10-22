@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         openssh-sftp-server \
         procps \
         traceroute \
+        php-cli \
     && rm -rf /var/lib/apt/lists/*
 
 # Create supervisor and sandbox users/groups
