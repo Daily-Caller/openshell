@@ -1,4 +1,27 @@
+# Local OpenCode config (copy from opencode.json.sample)
+opencode.json
+
+# Local discovery bridge (agents live at repo root; OpenCode loads via .opencode/).
+# Create with:
+#   mkdir -p .opencode && ln -sfn ../agents .opencode/agents
+.opencode/
+
+# UI / local OpenCode state the user sets
 themes
 cli.json
 service.json
 service.json.tmp
+
+# Runtime / local state
+desk.sqlite3
+logs/
+.senior-craft/
+
+# OS / editor
+.DS_Store
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]

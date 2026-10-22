@@ -1,0 +1,31 @@
+{
+	"name": "opencode-agent-bus",
+	"version": "1.0.0",
+	"description": "OpenCode plugin: shared blackboard (bus_* tools) for multi-agent desks",
+	"type": "module",
+	"license": "MIT",
+	"author": "The Daily Caller",
+	"keywords": [
+		"opencode",
+		"plugin",
+		"blackboard",
+		"multi-agent"
+	],
+	"main": "./index.ts",
+	"exports": {
+		".": "./index.ts",
+		"./lib/blackboard": "./lib/blackboard.ts"
+	},
+	"files": [
+		"index.ts",
+		"lib/",
+		"README.md",
+		"LICENSE"
+	],
+	"peerDependencies": {
+		"@opencode/plugin": "*"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}

@@ -1,0 +1,31 @@
+{
+	"name": "opencode-honor-code-model",
+	"version": "1.0.0",
+	"description": "OpenCode plugin: switch child sessions to the agent-declared model on session.created",
+	"type": "module",
+	"license": "MIT",
+	"author": "The Daily Caller",
+	"keywords": [
+		"opencode",
+		"plugin",
+		"model",
+		"subagent"
+	],
+	"main": "./index.ts",
+	"exports": {
+		".": "./index.ts",
+		"./lib/model-normalize": "./lib/model-normalize.ts"
+	},
+	"files": [
+		"index.ts",
+		"lib/",
+		"README.md",
+		"LICENSE"
+	],
+	"peerDependencies": {
+		"@opencode/plugin": "*"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}
