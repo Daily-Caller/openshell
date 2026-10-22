@@ -1,5 +1,7 @@
 # Openshell
 
+License: [MIT](LICENSE) © 2026 The Daily Caller
+
 This is a standard environment for working on our projects using Opencode
 inside an Openshell sandbox.
 
