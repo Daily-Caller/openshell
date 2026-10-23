@@ -76,6 +76,8 @@ export async function createSandbox(path, name) {
 		"themes",
 		"skills",
 		"prompts",
+		"instructions",
+		"packages",
 		"opencode.json",
 		"cli.json",
 		".gitignore",
