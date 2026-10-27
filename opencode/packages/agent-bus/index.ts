@@ -22,6 +22,7 @@ import {
   renderBoardList,
   renderHandoff,
   renderStatus,
+  pruneBoard,
   renderTask,
   setPlanOnRegistry,
   switchBoard,
@@ -593,6 +594,42 @@ export default Plugin.define({
       })
 
       editor.add({
+        name: "bus_mempalace_search",
+        description:
+          "Search the palace for relevant history instead of loading full facts",
+        input: EMPTY_SCHEMA,
+        options: { codemode: true },
+        execute: async () => ok("MemPalace search (proxy): prefers scoped recall from wings over flat facts. If MCP server 'mempalace' not registered, fallback to guidance. Use opencode MCP list to discover."),
+      })
+
+      editor.add({
+        name: "bus_mempalace_mine",
+        description:
+          "Mine this task result + artifacts into the current wing",
+        input: EMPTY_SCHEMA,
+        options: { codemode: true },
+        execute: async () => ok("MemPalace mine (trigger): if MCP present calls mine tool on current wing; else adds event + guidance. Graceful: result_summary eligible for mining."),
+      })
+
+      editor.add({
+        name: "bus_prune",
+        description: "Prune current board to ~30 newest + important items per category. Saves result.",
+        input: EMPTY_SCHEMA,
+        options: { codemode: true },
+        execute: async (input, context) => {
+          try {
+            const { registry, board } = await load(ctx)
+            const id = registry.current
+            pruneBoard(board, 30)
+            await save(ctx, registry)
+            return ok(`Board pruned: ${id}`)
+          } catch (e) {
+            return err(e)
+          }
+        },
+      })
+
+      editor.add({
         name: "bus_clear",
         description: [
           "Wipe the current board only (plan, tasks, facts, artifacts).",
@@ -628,21 +665,30 @@ export default Plugin.define({
       })
     })
 
+let lastPlanVer = 0, lastFactCount = 0, lastOpenCount = 0
     const contextHook = await ctx.session.hook("context", async (event) => {
       try {
         const { registry, board } = await load(ctx)
         const open = listTasks(board, { status: ["pending", "running", "blocked"] })
         if (!board.plan && open.length === 0) return
-        event.system.push({
-          type: "text",
-          text: [
-            "Shared agent blackboard (source of truth across Manager and subagents):",
-            renderStatus(board, registry.current),
-            "",
-            "Ops use the current board. bus_list / bus_use switch boards; bus_plan_set project= creates/selects a board; bus_clear wipes current only.",
-            "Prefer bus_handoff(task_id) when spawning. Do not rewrite the whole plan without supersede_reason. Do not rely on parent session transcripts for shared state.",
-          ].join("\n"),
-        })
+        const ver = board.plan ? board.plan.version : 0
+        const fc = board.facts.length, oc = open.length
+        if (ver === lastPlanVer && fc === lastFactCount && oc === lastOpenCount) {
+          event.system.push({ type: "text", text: `delta: v${ver} f=${fc} t=${oc} (no change)` })
+        } else {
+          event.system.push({
+            type: "text",
+            text: [
+              "Shared agent blackboard (source of truth across Manager and subagents):",
+              renderStatus(board, registry.current),
+              "",
+              "Ops use the current board. bus_list / bus_use switch boards; bus_plan_set project= creates/selects a board; bus_clear wipes current only.",
+              "Prefer bus_handoff(task_id) when spawning. Do not rewrite the whole plan without supersede_reason. Do not rely on parent session transcripts for shared state. Every subagent MUST end with bus_task_update (done|blocked) — the mandatory termination ritual.",
+              "Hybrid memory model: operational blackboard (live facts/artifacts) + MemPalace (long-term semantic recall via wings).",
+            ].join("\n"),
+          })
+          lastPlanVer = ver; lastFactCount = fc; lastOpenCount = oc
+        }
       } catch (e) {
         console.warn("[agent-bus] context hook failed:", e)
       }

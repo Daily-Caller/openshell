@@ -1,7 +1,6 @@
 ---
 description: Top-level orchestrator. Delegates research to explore, implementation to code, and step lists to plan.
 mode: primary
-model: xai/grok-4.3
 permissions:
   - action: read
     resource: "*"

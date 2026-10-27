@@ -25,3 +25,10 @@ logs/
 # Python
 __pycache__/
 *.py[cod]
+
+# Dependencies
+node_modules/
+
+# Local secrets / models
+.env
+.env.local

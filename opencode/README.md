@@ -9,29 +9,46 @@ License: [MIT](LICENSE) © 2026 The Daily Caller
 ## Requirements
 
 - [OpenCode](https://opencode.ai) **v2.0.23+** (`opencode --version`)
-- Provider credentials (see `opencode.json.sample`)
+- Provider credentials and models via `.env` (see `.env.example`)
 
 ## Setup
 
 ```bash
 cp opencode.json.sample opencode.json
+cp .env.example .env
 ```
 
-`opencode.json` is gitignored. Keep its tab indentation (see
-`instructions/preserve-whitespace.md`). Example env:
+Edit `.env` with provider keys and models (`provider/model-id`). Both
+`opencode.json` and `.env` are gitignored. Config resolves models via
+`{env:MODEL_*}` and keys via `{env:KEY_*}`.
+
+`opencode.json` keeps tab indentation (see `instructions/preserve-whitespace.md`).
+
+Required env vars:
+
+| Var | Used for |
+|-----|----------|
+| `MODEL_DEFAULT` | Root default model |
+| `MODEL_SMALL` | Small / cheap model |
+| `MODEL_MANAGER` | `manager` agent |
+| `MODEL_CODE` | `code` agent |
+| `MODEL_PLAN` | `plan` agent |
+| `MODEL_EXPLORE` | `explore` agent |
+| `KEY_*` | Provider API keys you use (`KEY_XAI`, `KEY_ANTHROPIC`, …) |
+
+Example `.env` fragment (any supported provider):
 
 ```bash
-export KEY_XAI=...
-export MODEL_DEFAULT=xai/grok-4.3
-export MODEL_MANAGER=xai/grok-4.3
-export MODEL_CODE=xai/grok-4.5
-export MODEL_PLAN=xai/grok-4.5
-export MODEL_EXPLORE=xai/grok-4.3
-export MODEL_SMALL=xai/grok-4.3
+KEY_XAI=...
+MODEL_DEFAULT=xai/grok-4.3
+MODEL_MANAGER=xai/grok-4.3
+MODEL_CODE=xai/grok-4.5
+MODEL_PLAN=xai/grok-4.5
+MODEL_EXPLORE=xai/grok-build-0.1
+MODEL_SMALL=xai/grok-build-0.1
 ```
 
-Frontmatter models are defaults. `opencode.json` `agents.*.model` env overrides
-win when set. Open this directory in OpenCode; default agent is `manager`.
+Open this directory in OpenCode; default agent is `manager`.
 
 Project agents load from `.opencode/` (gitignored):
 
@@ -71,12 +88,12 @@ the board before spawn (`bus_use` or `project` on plan set), then passes
 
 ## Agents
 
-| Agent | Mode | Default model | Role |
-|-------|------|---------------|------|
-| `manager` | primary | `xai/grok-4.3` | Runs the desk; shell tests; talks to the user |
-| `plan` | subagent | `xai/grok-4.5` | Ordered steps with Done/Blocked criteria |
-| `code` | subagent | `xai/grok-4.5` | One closed-ended goal |
-| `explore` | built-in | config / OpenCode default | Read-only research |
+| Agent | Mode | Model env | Role |
+|-------|------|-----------|------|
+| `manager` | primary | `MODEL_MANAGER` | Runs the desk; shell tests; talks to the user |
+| `plan` | subagent | `MODEL_PLAN` | Ordered steps with Done/Blocked criteria |
+| `code` | subagent | `MODEL_CODE` | One closed-ended goal |
+| `explore` | built-in | `MODEL_EXPLORE` | Read-only research |
 
 ### Permissions
 
@@ -91,7 +108,8 @@ agents/                       # manager.md, plan.md, code.md
 packages/agent-bus/           # blackboard plugin
 packages/honor-code-model/    # child-session model switch
 instructions/                 # preserve-whitespace.md
-opencode.json.sample          # plugins: ["./packages/…"]
+opencode.json.sample          # {env:MODEL_*} / {env:KEY_*}; plugins
+.env.example                  # keys + models (copy to .env)
 LICENSE
 ```
 

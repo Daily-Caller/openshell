@@ -45,6 +45,7 @@ export type Task = {
   agent: TaskAgent
   status: TaskStatus
   goal: string
+  model?: string
   constraints?: string
   acceptance?: string
   inputs?: string
@@ -53,6 +54,8 @@ export type Task = {
   blocked_reason?: string
   updated_at: number
   updated_by?: string
+  max_steps?: number
+  steps_used?: number
 }
 
 export type Fact = {
@@ -60,6 +63,7 @@ export type Fact = {
   value: string
   source_agent?: string
   task_id?: string
+  scope?: string
   created_at: number
 }
 
@@ -110,11 +114,22 @@ export const EMPTY_BOARD: Board = {
   events: [],
 }
 
-const MAX_EVENTS = 200
+const MAX_EVENTS = 80
 export const MAX_EVENT_DETAIL_SIZE = 4096 // 4KB per event detail
 /** Security limits to prevent resource exhaustion */
-export const MAX_FACTS = 500
-export const MAX_ARTIFACTS = 200
+export const MAX_FACTS = 80
+export const MAX_ARTIFACTS = 60
+
+function hasImportant(item: any): boolean {
+  const s = ((item && (item.value || item.notes || item.detail || item.key)) || "").toString().toLowerCase()
+  return s.includes("important")
+}
+function pruneList<T extends {created_at?: number}>(arr: T[], max: number): T[] {
+  if (arr.length <= max) return arr
+  const imp = arr.filter(hasImportant)
+  const rest = arr.filter((x) => !hasImportant(x)).sort((a,b) => (b.created_at||0)-(a.created_at||0)).slice(0, max - imp.length)
+  return [...imp, ...rest].sort((a,b) => (b.created_at||0)-(a.created_at||0)).slice(0, max)
+}
 
 /** Agents that are allowed to set privileged source_agent values */
 export const TRUSTED_INTERNAL_AGENTS = ["manager", "system"] as const;
@@ -410,10 +425,14 @@ function coerceTask(value: unknown): Task | null {
   if (typeof t.constraints === "string") task.constraints = t.constraints
   if (typeof t.acceptance === "string") task.acceptance = t.acceptance
   if (typeof t.inputs === "string") task.inputs = t.inputs
+  if (typeof t.model === "string" && t.model.includes("/")) task.model = t.model
   if (typeof t.result_summary === "string") task.result_summary = t.result_summary
   if (typeof t.failure_signature === "string") task.failure_signature = t.failure_signature
   if (typeof t.blocked_reason === "string") task.blocked_reason = t.blocked_reason
   if (typeof t.updated_by === "string") task.updated_by = t.updated_by
+  if (typeof t.max_steps === "number") task.max_steps = t.max_steps
+  if (typeof t.steps_used === "number") task.steps_used = t.steps_used
+  if (typeof t.model === "string" && t.model.includes("/")) task.model = t.model
   return task
 }
 
@@ -429,7 +448,7 @@ export function pushEvent(
   }
   board.events.push({ at, op, detail, ...(agent ? { agent } : {}) })
   if (board.events.length > MAX_EVENTS) {
-    board.events = board.events.slice(-MAX_EVENTS)
+    board.events = pruneList(board.events as any, MAX_EVENTS)
   }
 }
 
@@ -451,6 +470,8 @@ export type PlanSetInput = {
     constraints?: string
     acceptance?: string
     inputs?: string
+    max_steps?: number
+    model?: string
   }>
   actor?: string
   at?: number
@@ -534,6 +555,8 @@ export function setPlan(board: Board, input: PlanSetInput): Board {
     if (s.constraints?.trim()) task.constraints = s.constraints.trim()
     if (s.acceptance?.trim()) task.acceptance = s.acceptance.trim()
     if (s.inputs?.trim()) task.inputs = s.inputs.trim()
+    if (typeof s.max_steps === "number" && Number.isInteger(s.max_steps) && s.max_steps > 0) task.max_steps = s.max_steps
+    if (s.model) task.model = s.model
     nextTasks.push(task)
   })
 
@@ -554,12 +577,15 @@ export type TaskUpsertInput = {
   title: string
   agent: TaskAgent
   goal: string
+  model?: string
   status?: TaskStatus
   constraints?: string
   acceptance?: string
   inputs?: string
   actor?: string
   at?: number
+  max_steps?: number
+  model?: string
 }
 
 export function upsertTask(board: Board, input: TaskUpsertInput): Task {
@@ -589,6 +615,7 @@ export function upsertTask(board: Board, input: TaskUpsertInput): Task {
     existing.title = title
     existing.agent = input.agent
     existing.goal = goal
+    if (typeof input.model === "string" && input.model.includes("/")) existing.model = input.model
     existing.plan_version = planVersion
     existing.updated_at = at
     existing.updated_by = actor
@@ -600,6 +627,18 @@ export function upsertTask(board: Board, input: TaskUpsertInput): Task {
     }
     if (input.inputs !== undefined) {
       existing.inputs = input.inputs.trim() || undefined
+    }
+    if (input.max_steps !== undefined) {
+      if (typeof input.max_steps === "number" && Number.isInteger(input.max_steps) && input.max_steps > 0) {
+        existing.max_steps = input.max_steps
+      } else {
+        delete existing.max_steps
+      }
+    }
+    if (input.model !== undefined && (typeof input.model !== "string" || !input.model.includes("/") || input.model.split("/").length !== 2)) {
+      existing.model = input.model || undefined
+    } else if (input.model) {
+      pushEvent(board, "task_model", `${id} non-default model ${input.model}`, actor, at)
     }
     if (input.status) {
       applyStatus(existing, input.status, { actor, at })
@@ -623,6 +662,8 @@ export function upsertTask(board: Board, input: TaskUpsertInput): Task {
   if (input.constraints?.trim()) task.constraints = input.constraints.trim()
   if (input.acceptance?.trim()) task.acceptance = input.acceptance.trim()
   if (input.inputs?.trim()) task.inputs = input.inputs.trim()
+  if (typeof input.max_steps === "number" && Number.isInteger(input.max_steps) && input.max_steps > 0) task.max_steps = input.max_steps
+  if (input.model && input.model.includes("/")) task.model = input.model
   board.tasks.push(task)
   pushEvent(board, "task_upsert", `${id} created (${status})`, actor, at)
   return task
@@ -713,7 +754,7 @@ export function updateTask(board: Board, input: TaskUpdateInput): Task {
   pushEvent(
     board,
     "task_update",
-    `${id} -> ${task.status}${task.result_summary ? `: ${task.result_summary.slice(0, 80)}` : ""}`,
+    `${id} -> ${task.status}${task.result_summary ? `: ${task.result_summary.slice(0, 80)}` : ""}${task.status === "done" ? " (result_summary eligible for MemPalace mining)" : ""}`,
     actor,
     at,
   )
@@ -727,6 +768,7 @@ export function putFact(
     value: string
     source_agent?: string
     task_id?: string
+    scope?: string
     at?: number
   },
 ): Fact {
@@ -739,7 +781,7 @@ export function putFact(
     throw new Error("source_agent \"" + input.source_agent + "\" is reserved");
   }
 
-  if (board.facts.length >= MAX_FACTS) { throw new Error("fact limit exceeded (MAX_FACTS=" + MAX_FACTS + "). Consider pruning or using multiple boards.") }
+  if (board.facts.length >= MAX_FACTS) { board.facts = pruneList(board.facts as any, MAX_FACTS - 1) }
   const at = input.at ?? Date.now()
   const existing = board.facts.find((f) => f.key === key)
   if (existing) {
@@ -747,6 +789,7 @@ export function putFact(
     existing.created_at = at
     if (input.source_agent) existing.source_agent = input.source_agent
     if (input.task_id) existing.task_id = input.task_id
+    if (input.scope) existing.scope = input.scope
     pushEvent(board, "fact_put", `update ${key}`, input.source_agent, at)
     return existing
   }
@@ -757,6 +800,7 @@ export function putFact(
   }
   if (input.source_agent) fact.source_agent = input.source_agent
   if (input.task_id) fact.task_id = input.task_id
+  if (input.scope) fact.scope = input.scope
   board.facts.push(fact)
   pushEvent(board, "fact_put", `add ${key}`, input.source_agent, at)
   return fact
@@ -779,7 +823,7 @@ export function addArtifact(
 ): Artifact {
   const path = input.path?.trim()
   if (!path) throw new Error("path required")
-  if (board.artifacts.length >= MAX_ARTIFACTS) { throw new Error("artifact limit exceeded (MAX_ARTIFACTS=" + MAX_ARTIFACTS + "). Only store critical outputs.") }
+  if (board.artifacts.length >= MAX_ARTIFACTS) { board.artifacts = pruneList(board.artifacts as any, MAX_ARTIFACTS - 1) }
   const at = input.at ?? Date.now()
   const n = board.artifacts.length + 1
   const art: Artifact = {
@@ -824,54 +868,40 @@ export function clearBoard(board: Board, actor = "unknown", at = Date.now()): Bo
 }
 
 export function renderTask(task: Task): string {
-  const lines = [
-    `## ${task.id} [${task.status}] ${task.title}`,
-    `agent: ${task.agent}`,
-    `plan_version: ${task.plan_version}`,
-    `goal: ${task.goal}`,
-  ]
-  if (task.constraints) lines.push(`constraints: ${task.constraints}`)
-  if (task.acceptance) lines.push(`acceptance: ${task.acceptance}`)
-  if (task.inputs) lines.push(`inputs: ${task.inputs}`)
-  if (task.result_summary) lines.push(`result_summary: ${task.result_summary}`)
-  if (task.failure_signature) lines.push(`failure_signature: ${task.failure_signature}`)
-  if (task.blocked_reason) lines.push(`blocked_reason: ${task.blocked_reason}`)
+  const lines = [`## ${task.id} [${task.status}] ${task.title}`, `a:${task.agent} v${task.plan_version}${task.model ? ` m:${task.model}` : ""}`, `g:${task.goal}`]
+  if (task.model) lines.push(`m:${task.model}`)
+  if (task.constraints) lines.push(`c:${task.constraints}`)
+  if (task.acceptance) lines.push(`acc:${task.acceptance}`)
+  if (task.inputs) lines.push(`i:${task.inputs}`)
+  if (task.result_summary) lines.push(`r:${task.result_summary.slice(0,60)}`)
+  if (task.failure_signature) lines.push(`f:${task.failure_signature.slice(0,40)}`)
+  if (task.blocked_reason) lines.push(`b:${task.blocked_reason.slice(0,40)}`)
   return lines.join("\n")
 }
 
 export function renderHandoff(board: Board, taskId: string): string {
   const task = getTask(board, taskId)
   if (!task) throw new Error(`unknown task ${taskId}`)
-  const facts = board.facts.filter((f) => !f.task_id || f.task_id === task.id)
+  const facts = board.facts.filter((f) => (!f.task_id || f.task_id === task.id) && (!f.scope || f.scope === task.id || f.scope === "global"))
   const arts = board.artifacts.filter((a) => a.task_id === task.id)
   const lines = [
-    `task_id: ${task.id}`,
-    `Load full context with bus_task_get({ id: "${task.id}" }) and bus_fact_list if needed.`,
-    `Do not invent plan steps. Do not inspect parent sessions.`,
-    "",
+    `t:${task.id}`,
+    board.plan && task.plan_version < board.plan.version ? `MemPalace> v${board.plan.version}` : `MemPalace recall; bus_fact_list recent only`,
+    `no invent steps`,
     renderTask(task),
+    task.model ? `model:${task.model}` : "",
   ]
-  if (board.plan) {
-    lines.push("", `## Active plan v${board.plan.version}`, `goal: ${board.plan.goal}`)
-  }
+  if (board.plan) lines.push(`plan v${board.plan.version} ${board.plan.goal.slice(0,40)}`)
   if (facts.length) {
-    lines.push("", "## Facts")
-    for (const f of facts.slice(0, 40)) {
-      lines.push(`- ${f.key}: ${f.value}`)
+    lines.push(`facts(${facts.length}):`)
+    for (const f of facts.slice(0, 8)) {
+      const v = f.value.length > 60 ? f.value.slice(0, 60) + "…" : f.value
+      lines.push(`- ${f.key}:${v}`)
     }
   }
-  if (arts.length) {
-    lines.push("", "## Artifacts")
-    for (const a of arts) {
-      lines.push(`- ${a.id} (${a.kind}) ${a.path}${a.notes ? ` — ${a.notes}` : ""}`)
-    }
-  }
-  lines.push(
-    "",
-    "## Before you finish",
-    `Call bus_task_update with id=${task.id}, status=done|blocked, and result_summary.`,
-    "Put durable findings in bus_fact_put. Record output paths with bus_artifact_add.",
-  )
+  if (arts.length) lines.push(`arts:${arts.length}`)
+  const rem = (task.max_steps ?? 15) - (task.steps_used ?? 0)
+  lines.push(`term: max=15 final=bus_task_update steps_rem=${rem}`)
   return lines.join("\n")
 }
 
@@ -882,31 +912,21 @@ export function renderHandoff(board: Board, taskId: string): string {
 export function renderStatus(board: Board, boardId?: string): string {
   const lines: string[] = []
   if (boardId) lines.push(`Board: ${boardId}`)
-  if (!board.plan) {
-    lines.push("No active plan.")
-  } else {
-    lines.push(`Plan v${board.plan.version}: ${board.plan.goal}`)
-    if (board.plan.done_criteria.length) {
-      lines.push("Done: " + board.plan.done_criteria.map((c) => `• ${c}`).join(" "))
-    }
-  }
-  const open = listTasks(board, {
-    status: ["pending", "running", "blocked"],
-  })
-  if (!open.length) {
-    lines.push("Open tasks: (none)")
-  } else {
-    lines.push("Open tasks:")
-    for (const t of open) {
-      const mark =
-        t.status === "running" ? "[•]" : t.status === "blocked" ? "[!]" : "[ ]"
-      lines.push(`  ${mark} ${t.id} (${t.agent}) ${t.title}`)
-    }
-  }
+  if (board.plan) {
+    lines.push(`Plan v${board.plan.version}: ${board.plan.goal.slice(0,50)}`)
+  } else lines.push("No plan")
+  const open = listTasks(board, { status: ["pending", "running", "blocked"] })
+  lines.push(open.length ? `Open: ${open.map(t=>t.id).join(" ")}` : "Open: none")
   const done = listTasks(board, { status: "done" }).length
-  const cancelled = listTasks(board, { status: "cancelled" }).length
-  lines.push(`Closed: ${done} done, ${cancelled} cancelled | facts=${board.facts.length} artifacts=${board.artifacts.length}`)
+  lines.push(`Done:${done} facts=${board.facts.length}`)
   return lines.join("\n")
+}
+
+/** Prune a board to keepRecent newest + important items (facts/artifacts/events). */
+export function pruneBoard(board: Board, keepRecent = 30): void {
+  board.facts = pruneList(board.facts as any, keepRecent)
+  board.artifacts = pruneList(board.artifacts as any, keepRecent)
+  board.events = pruneList(board.events as any, keepRecent)
 }
 
 /** JSON-safe snapshot for storage. */
