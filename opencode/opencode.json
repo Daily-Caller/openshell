@@ -4,6 +4,7 @@
 		"instructions/preserve-whitespace.md"
 	],
 	"shell": "bash",
+
 	"providers": {
 		"anthropic": {
 			"settings": {
@@ -31,6 +32,7 @@
 			}
 		}
 	},
+
 	"agents": {
 		"manager": {
 			"model": "{env:MODEL_MANAGER}"
@@ -45,9 +47,12 @@
 			"model": "{env:MODEL_EXPLORE}"
 		}
 	},
+
 	"model": "{env:MODEL_DEFAULT}",
 	"small_model": "{env:MODEL_SMALL}",
+
 	"default_agent": "manager",
+
 	"plugins": [
 		"./packages/agent-bus",
 		"./packages/honor-code-model"
