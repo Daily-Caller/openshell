@@ -1,3 +1,0 @@
-[submodule "opencode"]
-	path = opencode
-	url = ssh://git@git.dailycaller.com:2222/DailyCaller/opencode.git
