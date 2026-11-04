@@ -114,6 +114,7 @@ export async function createSandbox(path, name) {
 	const args = [
 		"sandbox",
 		"create",
+		"--no-keep",
 		"--name",
 		name,
 		"--from",
