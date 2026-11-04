@@ -189,6 +189,8 @@ COPY policy.yaml /etc/openshell/policy.yaml
 # both ~/.claude/skills/ and ~/.agents/skills/ for agent discovery.
 COPY skills/ /sandbox/.agents/skills/
 
+RUN git config --global --add safe.directory "*"
+
 # Set up sandbox user home directory
 RUN mkdir -p /sandbox/.config/opencode /sandbox/.claude/skills && \
     # Create a writable venv using uv-managed Python 3.14.3.
